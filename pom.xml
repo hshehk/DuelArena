@@ -25,16 +25,14 @@
 
     <dependencies>
         <!--
-          注意:Purpur 從 26.x 開始改用新的版號格式,實際 artifact 版本
-          可能是 26.2-R0.1-SNAPSHOT 或類似 26.2.build.xxx-stable 的格式。
-          如果下面這個版本號抓不到,請到 https://repo.purpurmc.org/snapshots/org/purpurmc/purpur/purpur-api/
-          看目前實際存在的資料夾名稱,換成正確的版本字串即可,程式碼完全不用改。
-          編譯這個專案需要 JDK 25(因為 Purpur 26.2 API 是用 Java 25 編譯的)。
+          Purpur 26.x 開始改用「版本範圍」格式(官方 README 就是這樣寫),
+          不能像以前一樣寫死一個 26.2-R0.1-SNAPSHOT,那個版本根本不存在。
+          用範圍寫法會自動抓 26.2 分支底下最新的 build。
         -->
         <dependency>
             <groupId>org.purpurmc.purpur</groupId>
             <artifactId>purpur-api</artifactId>
-            <version>26.2-R0.1-SNAPSHOT</version>
+            <version>[26.2.build,)</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
