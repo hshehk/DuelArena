@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>net.duelarena</groupId>
+    <artifactId>DuelArena</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <properties>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <repositories>
+        <!-- Purpur 官方 Maven 倉庫 -->
+        <repository>
+            <id>purpur-repo</id>
+            <url>https://repo.purpurmc.org/snapshots</url>
+        </repository>
+    </repositories>
+
+    <dependencies>
+        <!--
+          注意:Purpur 從 26.x 開始改用新的版號格式,實際 artifact 版本
+          可能是 26.2-R0.1-SNAPSHOT 或類似 26.2.build.xxx-stable 的格式。
+          如果下面這個版本號抓不到,請到 https://repo.purpurmc.org/snapshots/org/purpurmc/purpur/purpur-api/
+          看目前實際存在的資料夾名稱,換成正確的版本字串即可,程式碼完全不用改。
+          編譯這個專案需要 JDK 25(因為 Purpur 26.2 API 是用 Java 25 編譯的)。
+        -->
+        <dependency>
+            <groupId>org.purpurmc.purpur</groupId>
+            <artifactId>purpur-api</artifactId>
+            <version>26.2-R0.1-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>${project.artifactId}</finalName>
+        <defaultGoal>package</defaultGoal>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+    </build>
+</project>

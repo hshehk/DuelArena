@@ -1,0 +1,17 @@
+# DuelArena 設定檔
+
+settings:
+  # 決鬥結束後,贏家可以整理(回收物品/方塊)的秒數
+  cleanup-seconds: 60
+  # 決鬥邀請的逾時秒數,超過沒回應自動取消
+  invite-timeout-seconds: 30
+  # 打刀場(BLADE)禁止放置/召喚的實體(EntityType 名稱,大寫)
+  blade-banned-entities:
+    - END_CRYSTAL
+    - MINECART_TNT
+  # 打刀場(BLADE)禁止放置的方塊(Material 名稱,大寫)
+  blade-banned-blocks:
+    - RESPAWN_ANCHOR
+
+# 場地資料,建議都用 /duelarena 指令設定,不要手動編輯
+arenas: {}

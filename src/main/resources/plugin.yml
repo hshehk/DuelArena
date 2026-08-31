@@ -1,0 +1,40 @@
+name: DuelArena
+version: '${project.version}'
+main: net.duelarena.DuelPlugin
+api-version: '26.2'
+author: tsukieru
+description: 1v1 決鬥競技場插件(爆炸場 / 打刀場)
+
+commands:
+  duel:
+    description: 1v1 決鬥系統
+    usage: |
+      /duel <玩家> <explosive|blade>  邀請對方決鬥
+      /duel accept                   接受邀請
+      /duel deny                     拒絕邀請
+      /duel cancel                   取消我送出的邀請
+      /duel leave                    (贏家)提早結束整理時間離開
+    permission: duel.use
+  duelarena:
+    description: 決鬥場地管理
+    usage: |
+      /duelarena create <名稱> <explosive|blade>
+      /duelarena setpos1 <名稱>
+      /duelarena setpos2 <名稱>
+      /duelarena setspawn1 <名稱>
+      /duelarena setspawn2 <名稱>
+      /duelarena delete <名稱>
+      /duelarena list
+      /duelarena info <名稱>
+    permission: duelarena.admin
+
+permissions:
+  duel.use:
+    description: 允許使用 /duel 進行決鬥
+    default: true
+  duelarena.admin:
+    description: 允許管理決鬥場地
+    default: op
+  duelarena.admin.bypass:
+    description: 可無視場地保護,自由建造/破壞場地(維護用)
+    default: op
