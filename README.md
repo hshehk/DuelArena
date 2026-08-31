@@ -75,6 +75,18 @@ Purpur 的 Maven 依賴。請照以下步驟自己編譯:
 > 實際存在的資料夾名稱,把 pom.xml 裡的 `<version>` 改成一樣的字串即可,
 > 程式碼完全不用動。
 
+## 用 GitHub Actions 自動編譯
+
+專案裡已經放了 `.github/workflows/build.yml`,把整個資料夾推上 GitHub 之後:
+
+1. 到 repo 的 **Actions** 分頁,會看到 `Build` 這個 workflow 自動跑
+   (推 commit 到 main/master 分支、開 PR、或手動點 **Run workflow** 都會觸發)
+2. 跑完之後在該次執行紀錄的 **Artifacts** 區塊,會有一個叫 `DuelArena` 的壓縮檔可以下載,
+   裡面就是編好的 `DuelArena.jar`
+3. 下載解壓縮後把 jar 丟進伺服器 `plugins/` 資料夾即可
+
+這樣就不用自己在本機裝 JDK 25 + Maven 了,交給 Actions 的 runner 處理。
+
 ## 設定檔 config.yml
 
 ```yaml
