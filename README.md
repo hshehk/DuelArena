@@ -69,11 +69,9 @@ Purpur 的 Maven 依賴。請照以下步驟自己編譯:
 4. 編譯完成後,jar 檔會在 `target/DuelArena.jar`
 5. 把它丟進伺服器的 `plugins/` 資料夾,重啟伺服器
 
-> `pom.xml` 裡 Purpur API 的版本號寫的是 `26.2-R0.1-SNAPSHOT`,這是目前
-> Purpur 26.x 慣用的命名方式。如果編譯時抓不到這個版本,
-> 去 https://repo.purpurmc.org/snapshots/org/purpurmc/purpur/purpur-api/ 看
-> 實際存在的資料夾名稱,把 pom.xml 裡的 `<version>` 改成一樣的字串即可,
-> 程式碼完全不用動。
+> `pom.xml` 裡 Purpur API 的版本號寫的是官方建議的版本範圍 `[26.2.build,)`,
+> 這會自動抓 26.2 分支底下最新的 build,不用手動改版本號。
+> (先前版本寫死 `26.2-R0.1-SNAPSHOT` 是錯的,那個版本不存在,已修正。)
 
 ## 用 GitHub Actions 自動編譯
 
