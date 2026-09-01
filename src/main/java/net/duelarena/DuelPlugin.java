@@ -8,38 +8,41 @@ import net.duelarena.listener.DuelBlockListener;
 import net.duelarena.listener.DuelEntityListener;
 import net.duelarena.listener.DuelExplosionListener;
 import net.duelarena.listener.DuelPlayerListener;
+import net.duelarena.util.MessageManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class DuelPlugin extends JavaPlugin {
 
     private ArenaManager arenaManager;
     private DuelManager duelManager;
+    private MessageManager messageManager;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
 
+        this.messageManager = new MessageManager(this);
         this.arenaManager = new ArenaManager(this);
-        this.duelManager = new DuelManager(this);
+        this.duelManager = new DuelManager(this, messageManager);
 
         getServer().getPluginManager().registerEvents(
-                new DuelBlockListener(arenaManager, duelManager), this);
+                new DuelBlockListener(arenaManager, duelManager, messageManager), this);
         getServer().getPluginManager().registerEvents(
                 new DuelExplosionListener(arenaManager, duelManager), this);
         getServer().getPluginManager().registerEvents(
-                new DuelEntityListener(this, arenaManager), this);
+                new DuelEntityListener(this, arenaManager, messageManager), this);
         getServer().getPluginManager().registerEvents(
                 new DuelPlayerListener(duelManager), this);
 
         var duelCmd = getCommand("duel");
         if (duelCmd != null) {
-            DuelCommand executor = new DuelCommand(arenaManager, duelManager);
+            DuelCommand executor = new DuelCommand(arenaManager, duelManager, messageManager);
             duelCmd.setExecutor(executor);
             duelCmd.setTabCompleter(executor);
         }
         var duelArenaCmd = getCommand("duelarena");
         if (duelArenaCmd != null) {
-            DuelArenaCommand executor = new DuelArenaCommand(arenaManager);
+            DuelArenaCommand executor = new DuelArenaCommand(arenaManager, messageManager);
             duelArenaCmd.setExecutor(executor);
             duelArenaCmd.setTabCompleter(executor);
         }
@@ -61,5 +64,9 @@ public class DuelPlugin extends JavaPlugin {
 
     public DuelManager getDuelManager() {
         return duelManager;
+    }
+
+    public MessageManager getMessageManager() {
+        return messageManager;
     }
 }

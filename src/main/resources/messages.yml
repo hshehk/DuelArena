@@ -1,0 +1,96 @@
+# DuelArena 訊息設定檔
+# 支援 &顏色代碼 (例如 &c = 紅色, &a = 綠色, &e = 黃色)。
+# %xxx% 為變數,請勿刪除,可依需求調整順序或前後文字。
+# 修改後可用 /duelarena reload 重新載入,不需要重啟伺服器。
+
+# 訊息前綴,預設留空;如果想在每則訊息前加上例如 "&8[&cDuelArena&8] &r" 可以自行填寫。
+prefix: ''
+
+general:
+  reload: '&a已重新載入 messages.yml。'
+
+# 場地類型的顯示名稱
+type:
+  explosive: '爆炸場'
+  blade: '打刀場'
+
+# DuelBlockListener
+block:
+  place-denied: '&c這個場地目前不允許放置方塊。'
+  break-denied: '&c這個場地的地板/牆壁無法破壞。'
+
+# DuelEntityListener
+entity:
+  blade-block-denied: '&c打刀場禁止放置重生錨。'
+  blade-entity-denied: '&c打刀場禁止使用水晶/TNT礦車。'
+
+# /duelarena 指令 (DuelArenaCommand)
+arena:
+  none: '&e目前沒有任何場地。'
+  list-entry: '&7- &f%name% &7(%type%) %status%'
+  status-configured: '&a[已完成設定]'
+  status-not-configured: '&c[尚未設定完成]'
+  usage-create: '&c用法: /duelarena create <名稱> <explosive|blade>'
+  already-exists: '&c已經有同名場地了。'
+  invalid-type: '&c類型必須是 explosive 或 blade。'
+  created: '&a已建立場地 %name%(%type%),接著請設定 setpos1/setpos2/setspawn1/setspawn2。'
+  deleted: '&a已刪除場地 %name%'
+  not-found: '&c找不到場地 %name%'
+  not-found-create-first: '&c找不到場地 %name%,請先用 create 建立。'
+  info-header: '&6場地: %name%'
+  info-type: '&7類型: %type%'
+  info-world: '&7世界: %world%'
+  info-pos1: '&7Pos1: %pos%'
+  info-pos2: '&7Pos2: %pos%'
+  info-spawn1: '&7Spawn1: %status%'
+  info-spawn2: '&7Spawn2: %status%'
+  spawn-set: '已設定'
+  spawn-not-set: '未設定'
+  player-only: '&c此指令只能由玩家使用(需要你目前站的位置)。'
+  position-set: '&a已設定 %sub% -> %name%'
+  usage:
+    - '&e/duelarena create <名稱> <explosive|blade>'
+    - '&e/duelarena setpos1|setpos2|setspawn1|setspawn2 <名稱>'
+    - '&e/duelarena delete <名稱>'
+    - '&e/duelarena list'
+    - '&e/duelarena info <名稱>'
+    - '&e/duelarena reload'
+
+# /duel 指令與決鬥流程 (DuelCommand, DuelManager)
+duel:
+  player-only: '此指令只能由玩家使用。'
+  usage: '&e用法: /duel <玩家> <explosive|blade> | accept | deny | cancel | leave'
+  usage-invite: '&c用法: /duel <玩家> <explosive|blade>'
+  player-not-found: '&c找不到玩家 %player%'
+  invalid-type: '&c場地類型必須是 explosive 或 blade。'
+  arena-not-ready: '&c目前沒有設定好的 %type% 場地。'
+
+  cannot-invite-self: '不能邀請自己決鬥。'
+  arena-not-configured: '場地 %arena% 尚未設定完成(需要 pos1/pos2/spawn1/spawn2)。'
+  arena-busy: '場地 %arena% 目前正在使用中,請稍後再邀請。'
+  self-in-duel: '你目前正在決鬥中。'
+  target-in-duel: '%target% 目前正在決鬥中。'
+  target-has-pending-invite: '%target% 已經有一個待處理的邀請了。'
+
+  invite-timeout-sender: '&c決鬥邀請已逾時(%target% 沒有回應)。'
+  invite-timeout-target: '&c來自 %sender% 的決鬥邀請已逾時。'
+  invite-received: '&e%sender% 邀請你在「%arena%」(%type%) 進行 1v1 決鬥!輸入 &a/duel accept &e接受,或 &c/duel deny &e拒絕。'
+  invite-sent: '&a已送出決鬥邀請給 %target%,等待對方回應...'
+
+  no-pending-invite-sent: '你目前沒有送出中的邀請。'
+  invite-cancelled-target: '&c%sender% 取消了決鬥邀請。'
+
+  no-pending-invite-received: '你目前沒有收到決鬥邀請。'
+  invite-denied-sender: '&c%target% 拒絕了你的決鬥邀請。'
+  invite-denied-self: '&a已拒絕決鬥邀請。'
+
+  inviter-offline: '邀請你的玩家已離線,決鬥取消。'
+  arena-taken: '場地剛好被其他人搶先使用了,請重新邀請。'
+  already-in-duel: '其中一方已經在決鬥中了。'
+
+  start: '&6決鬥開始!對手:&e%opponent% &6(%type%)'
+  lost: '&c你輸掉了決鬥。'
+  won: '&a你贏了!你有 %seconds% 秒可以回收場上的物品/方塊,回收完可輸入 &e/duel leave &a提早離開。'
+
+  no-cleanup-pending: '你目前沒有需要離開的整理階段。'
+  cleanup-finished: '&a整理時間結束,場地已清理完畢。'

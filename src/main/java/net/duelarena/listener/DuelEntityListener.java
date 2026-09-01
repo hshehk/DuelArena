@@ -3,6 +3,7 @@ package net.duelarena.listener;
 import net.duelarena.arena.Arena;
 import net.duelarena.arena.ArenaManager;
 import net.duelarena.arena.ArenaType;
+import net.duelarena.util.MessageManager;
 import org.bukkit.Material;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -25,10 +26,12 @@ public class DuelEntityListener implements Listener {
 
     private final JavaPlugin plugin;
     private final ArenaManager arenaManager;
+    private final MessageManager messages;
 
-    public DuelEntityListener(JavaPlugin plugin, ArenaManager arenaManager) {
+    public DuelEntityListener(JavaPlugin plugin, ArenaManager arenaManager, MessageManager messages) {
         this.plugin = plugin;
         this.arenaManager = arenaManager;
+        this.messages = messages;
     }
 
     private Set<Material> bannedBlocks() {
@@ -63,7 +66,7 @@ public class DuelEntityListener implements Listener {
         if (bannedBlocks().contains(event.getBlock().getType())) {
             event.setCancelled(true);
             Player p = event.getPlayer();
-            p.sendMessage("§c打刀場禁止放置重生錨。");
+            messages.send(p, "entity.blade-block-denied");
         }
     }
 
@@ -76,7 +79,7 @@ public class DuelEntityListener implements Listener {
         if (bannedEntities().contains(event.getEntity().getType())) {
             event.setCancelled(true);
             if (event.getPlayer() != null) {
-                event.getPlayer().sendMessage("§c打刀場禁止使用水晶/TNT礦車。");
+                messages.send(event.getPlayer(), "entity.blade-entity-denied");
             }
         }
     }

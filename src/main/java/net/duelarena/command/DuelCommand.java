@@ -4,6 +4,7 @@ import net.duelarena.arena.Arena;
 import net.duelarena.arena.ArenaManager;
 import net.duelarena.arena.ArenaType;
 import net.duelarena.duel.DuelManager;
+import net.duelarena.util.MessageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -19,21 +20,23 @@ public class DuelCommand implements CommandExecutor, TabCompleter {
 
     private final ArenaManager arenaManager;
     private final DuelManager duelManager;
+    private final MessageManager messages;
 
-    public DuelCommand(ArenaManager arenaManager, DuelManager duelManager) {
+    public DuelCommand(ArenaManager arenaManager, DuelManager duelManager, MessageManager messages) {
         this.arenaManager = arenaManager;
         this.duelManager = duelManager;
+        this.messages = messages;
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage("此指令只能由玩家使用。");
+            messages.send(sender, "duel.player-only");
             return true;
         }
 
         if (args.length == 0) {
-            player.sendMessage("§e用法: /duel <玩家> <explosive|blade> | accept | deny | cancel | leave");
+            messages.send(player, "duel.usage");
             return true;
         }
 
@@ -57,24 +60,24 @@ public class DuelCommand implements CommandExecutor, TabCompleter {
             }
             default -> {
                 if (args.length < 2) {
-                    player.sendMessage("§c用法: /duel <玩家> <explosive|blade>");
+                    messages.send(player, "duel.usage-invite");
                     return true;
                 }
                 Player target = Bukkit.getPlayerExact(args[0]);
                 if (target == null) {
-                    player.sendMessage("§c找不到玩家 " + args[0]);
+                    messages.send(player, "duel.player-not-found", "player", args[0]);
                     return true;
                 }
                 ArenaType type;
                 try {
                     type = parseType(args[1]);
                 } catch (IllegalArgumentException ex) {
-                    player.sendMessage("§c場地類型必須是 explosive 或 blade。");
+                    messages.send(player, "duel.invalid-type");
                     return true;
                 }
                 Arena arena = findArenaOfType(type);
                 if (arena == null) {
-                    player.sendMessage("§c目前沒有設定好的 " + args[1] + " 場地。");
+                    messages.send(player, "duel.arena-not-ready", "type", args[1]);
                     return true;
                 }
                 String err = duelManager.sendInvite(player, target, arena);

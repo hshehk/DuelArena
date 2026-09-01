@@ -5,6 +5,7 @@ import net.duelarena.arena.ArenaManager;
 import net.duelarena.duel.Duel;
 import net.duelarena.duel.DuelManager;
 import net.duelarena.util.LocationUtil;
+import net.duelarena.util.MessageManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -16,10 +17,12 @@ public class DuelBlockListener implements Listener {
 
     private final ArenaManager arenaManager;
     private final DuelManager duelManager;
+    private final MessageManager messages;
 
-    public DuelBlockListener(ArenaManager arenaManager, DuelManager duelManager) {
+    public DuelBlockListener(ArenaManager arenaManager, DuelManager duelManager, MessageManager messages) {
         this.arenaManager = arenaManager;
         this.duelManager = duelManager;
+        this.messages = messages;
     }
 
     private boolean bypass(Player p) {
@@ -39,7 +42,7 @@ public class DuelBlockListener implements Listener {
 
         if (!allowed) {
             event.setCancelled(true);
-            player.sendMessage("§c這個場地目前不允許放置方塊。");
+            messages.send(player, "block.place-denied");
             return;
         }
 
@@ -63,7 +66,7 @@ public class DuelBlockListener implements Listener {
 
         if (!allowedToBreak) {
             event.setCancelled(true);
-            player.sendMessage("§c這個場地的地板/牆壁無法破壞。");
+            messages.send(player, "block.break-denied");
             return;
         }
 

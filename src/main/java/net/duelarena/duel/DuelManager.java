@@ -1,6 +1,7 @@
 package net.duelarena.duel;
 
 import net.duelarena.arena.Arena;
+import net.duelarena.util.MessageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -16,6 +17,7 @@ import java.util.UUID;
 public class DuelManager {
 
     private final JavaPlugin plugin;
+    private final MessageManager messages;
 
     /** target uuid -> 邀請 */
     private final Map<UUID, DuelInvite> invites = new HashMap<>();
@@ -24,8 +26,9 @@ public class DuelManager {
     /** 玩家 uuid -> 決鬥(雙方在 ACTIVE 階段都有,CLEANUP 階段只有贏家有) */
     private final Map<UUID, Duel> byPlayer = new HashMap<>();
 
-    public DuelManager(JavaPlugin plugin) {
+    public DuelManager(JavaPlugin plugin, MessageManager messages) {
         this.plugin = plugin;
+        this.messages = messages;
     }
 
     private int cleanupSeconds() {
@@ -34,6 +37,12 @@ public class DuelManager {
 
     private int inviteTimeoutSeconds() {
         return plugin.getConfig().getInt("settings.invite-timeout-seconds", 30);
+    }
+
+    private String typeName(net.duelarena.arena.ArenaType type) {
+        return type == net.duelarena.arena.ArenaType.EXPLOSIVE
+                ? messages.get("type.explosive")
+                : messages.get("type.blade");
     }
 
     // ---------------- 邀請流程 ----------------
@@ -52,22 +61,22 @@ public class DuelManager {
 
     public String sendInvite(Player from, Player target, Arena arena) {
         if (from.getUniqueId().equals(target.getUniqueId())) {
-            return "不能邀請自己決鬥。";
+            return messages.get("duel.cannot-invite-self");
         }
         if (!arena.isFullyConfigured()) {
-            return "場地 " + arena.getName() + " 尚未設定完成(需要 pos1/pos2/spawn1/spawn2)。";
+            return messages.get("duel.arena-not-configured", "arena", arena.getName());
         }
         if (isArenaBusy(arena)) {
-            return "場地 " + arena.getName() + " 目前正在使用中,請稍後再邀請。";
+            return messages.get("duel.arena-busy", "arena", arena.getName());
         }
         if (isInDuel(from.getUniqueId())) {
-            return "你目前正在決鬥中。";
+            return messages.get("duel.self-in-duel");
         }
         if (isInDuel(target.getUniqueId())) {
-            return target.getName() + " 目前正在決鬥中。";
+            return messages.get("duel.target-in-duel", "target", target.getName());
         }
         if (invites.containsKey(target.getUniqueId())) {
-            return target.getName() + " 已經有一個待處理的邀請了。";
+            return messages.get("duel.target-has-pending-invite", "target", target.getName());
         }
 
         DuelInvite invite = new DuelInvite(from.getUniqueId(), target.getUniqueId(), arena);
@@ -80,14 +89,14 @@ public class DuelManager {
                 invites.remove(target.getUniqueId());
                 Player f = Bukkit.getPlayer(from.getUniqueId());
                 Player t = Bukkit.getPlayer(target.getUniqueId());
-                if (f != null) f.sendMessage("§c決鬥邀請已逾時(" + target.getName() + " 沒有回應)。");
-                if (t != null) t.sendMessage("§c來自 " + from.getName() + " 的決鬥邀請已逾時。");
+                if (f != null) messages.send(f, "duel.invite-timeout-sender", "target", target.getName());
+                if (t != null) messages.send(t, "duel.invite-timeout-target", "sender", from.getName());
             }
         }, timeout * 20L));
 
-        target.sendMessage("§e" + from.getName() + " 邀請你在「" + arena.getName() + "」("
-                + arena.getType() + ") 進行 1v1 決鬥!輸入 §a/duel accept §e接受,或 §c/duel deny §e拒絕。");
-        from.sendMessage("§a已送出決鬥邀請給 " + target.getName() + ",等待對方回應...");
+        messages.send(target, "duel.invite-received",
+                "sender", from.getName(), "arena", arena.getName(), "type", typeName(arena.getType()));
+        messages.send(from, "duel.invite-sent", "target", target.getName());
         return null;
     }
 
@@ -98,45 +107,45 @@ public class DuelManager {
                 e.getValue().getTimeoutTask().cancel();
                 Player target = Bukkit.getPlayer(e.getKey());
                 if (target != null) {
-                    target.sendMessage("§c" + from.getName() + " 取消了決鬥邀請。");
+                    messages.send(target, "duel.invite-cancelled-target", "sender", from.getName());
                 }
                 return null;
             }
         }
-        return "你目前沒有送出中的邀請。";
+        return messages.get("duel.no-pending-invite-sent");
     }
 
     public String denyInvite(Player target) {
         DuelInvite invite = invites.remove(target.getUniqueId());
         if (invite == null) {
-            return "你目前沒有收到決鬥邀請。";
+            return messages.get("duel.no-pending-invite-received");
         }
         invite.getTimeoutTask().cancel();
         Player from = Bukkit.getPlayer(invite.getFrom());
         if (from != null) {
-            from.sendMessage("§c" + target.getName() + " 拒絕了你的決鬥邀請。");
+            messages.send(from, "duel.invite-denied-sender", "target", target.getName());
         }
-        target.sendMessage("§a已拒絕決鬥邀請。");
+        messages.send(target, "duel.invite-denied-self");
         return null;
     }
 
     public String acceptInvite(Player target) {
         DuelInvite invite = invites.remove(target.getUniqueId());
         if (invite == null) {
-            return "你目前沒有收到決鬥邀請。";
+            return messages.get("duel.no-pending-invite-received");
         }
         invite.getTimeoutTask().cancel();
 
         Player from = Bukkit.getPlayer(invite.getFrom());
         if (from == null || !from.isOnline()) {
-            return "邀請你的玩家已離線,決鬥取消。";
+            return messages.get("duel.inviter-offline");
         }
         Arena arena = invite.getArena();
         if (isArenaBusy(arena)) {
-            return "場地剛好被其他人搶先使用了,請重新邀請。";
+            return messages.get("duel.arena-taken");
         }
         if (isInDuel(from.getUniqueId()) || isInDuel(target.getUniqueId())) {
-            return "其中一方已經在決鬥中了。";
+            return messages.get("duel.already-in-duel");
         }
 
         startDuel(from, target, arena);
@@ -157,9 +166,9 @@ public class DuelManager {
         p1.teleport(arena.getSpawn1());
         p2.teleport(arena.getSpawn2());
 
-        String typeName = arena.getType() == net.duelarena.arena.ArenaType.EXPLOSIVE ? "爆炸場" : "打刀場";
-        p1.sendMessage("§6決鬥開始!對手:§e" + p2.getName() + " §6(" + typeName + ")");
-        p2.sendMessage("§6決鬥開始!對手:§e" + p1.getName() + " §6(" + typeName + ")");
+        String typeName = typeName(arena.getType());
+        messages.send(p1, "duel.start", "opponent", p2.getName(), "type", typeName);
+        messages.send(p2, "duel.start", "opponent", p1.getName(), "type", typeName);
     }
 
     private void resetForFight(Player p) {
@@ -243,13 +252,12 @@ public class DuelManager {
             if (back != null) {
                 loser.teleport(back);
             }
-            loser.sendMessage("§c你輸掉了決鬥。");
+            messages.send(loser, "duel.lost");
         }
 
         int seconds = cleanupSeconds();
         if (winner != null) {
-            winner.sendMessage("§a你贏了!你有 " + seconds + " 秒可以回收場上的物品/方塊," +
-                    "回收完可輸入 §e/duel leave §a提早離開。");
+            messages.send(winner, "duel.won", "seconds", seconds);
         }
 
         duel.setCleanupTask(Bukkit.getScheduler().runTaskLater(plugin,
@@ -260,7 +268,7 @@ public class DuelManager {
     public String requestLeave(Player winner) {
         Duel duel = byPlayer.get(winner.getUniqueId());
         if (duel == null || duel.getState() != DuelState.CLEANUP || !winner.getUniqueId().equals(duel.getWinner())) {
-            return "你目前沒有需要離開的整理階段。";
+            return messages.get("duel.no-cleanup-pending");
         }
         finishCleanup(duel, false);
         return null;
@@ -314,7 +322,7 @@ public class DuelManager {
                 if (back != null) {
                     winner.teleport(back);
                 }
-                winner.sendMessage("§a整理時間結束,場地已清理完畢。");
+                messages.send(winner, "duel.cleanup-finished");
             }
         }
     }
