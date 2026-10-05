@@ -32,7 +32,7 @@ public class DuelPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(
                 new DuelEntityListener(this, arenaManager, messageManager), this);
         getServer().getPluginManager().registerEvents(
-                new DuelPlayerListener(duelManager), this);
+                new DuelPlayerListener(this, arenaManager, duelManager, messageManager), this);
 
         var duelCmd = getCommand("duel");
         if (duelCmd != null) {

@@ -1,26 +1,43 @@
 package net.duelarena.arena;
 
-import net.duelarena.util.LocationUtil;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * 場地資料獨立存在 plugins/DuelArena/arenas.yml,不再和 config.yml 混在一起。
+ * 若 arenas.yml 不存在但舊版 config.yml 裡有 arenas 區塊,會自動搬移一次。
+ */
 public class ArenaManager {
 
     private final JavaPlugin plugin;
+    private final File file;
     private final Map<String, Arena> arenas = new LinkedHashMap<>();
 
     public ArenaManager(JavaPlugin plugin) {
         this.plugin = plugin;
+        this.file = new File(plugin.getDataFolder(), "arenas.yml");
         load();
     }
 
     public void load() {
         arenas.clear();
-        ConfigurationSection root = plugin.getConfig().getConfigurationSection("arenas");
+
+        ConfigurationSection root;
+        boolean migrate = false;
+        if (file.exists()) {
+            root = YamlConfiguration.loadConfiguration(file).getConfigurationSection("arenas");
+        } else {
+            // 舊版資料(存在 config.yml)自動搬移到 arenas.yml
+            root = plugin.getConfig().getConfigurationSection("arenas");
+            migrate = root != null && !root.getKeys(false).isEmpty();
+        }
         if (root == null) {
             return;
         }
@@ -39,45 +56,52 @@ public class ArenaManager {
                         arena.setRawPos2(world, sec.getInt("x2"), sec.getInt("y2"), sec.getInt("z2"));
                     }
                 }
-                Location s1 = LocationUtil.deserialize(sec.getString("spawn1"));
-                Location s2 = LocationUtil.deserialize(sec.getString("spawn2"));
-                arena.setSpawn1(s1);
-                arena.setSpawn2(s2);
+                arena.setSpawn1Raw(sec.getString("spawn1"));
+                arena.setSpawn2Raw(sec.getString("spawn2"));
                 arenas.put(name.toLowerCase(), arena);
             } catch (IllegalArgumentException ex) {
                 plugin.getLogger().warning("場地 " + name + " 設定有誤,略過:" + ex.getMessage());
             }
         }
+        if (migrate) {
+            save();
+            plugin.getLogger().info("已將舊版 config.yml 的場地資料搬移到 arenas.yml。");
+        }
     }
 
     public void save() {
-        plugin.getConfig().set("arenas", null);
+        YamlConfiguration yaml = new YamlConfiguration();
         for (Arena arena : arenas.values()) {
             String base = "arenas." + arena.getName();
-            plugin.getConfig().set(base + ".type", arena.getType().name());
+            yaml.set(base + ".type", arena.getType().name());
             if (arena.getWorld() != null) {
-                plugin.getConfig().set(base + ".world", arena.getWorld());
+                yaml.set(base + ".world", arena.getWorld());
                 Integer[] p1 = arena.getPos1();
                 Integer[] p2 = arena.getPos2();
                 if (p1[0] != null) {
-                    plugin.getConfig().set(base + ".x1", p1[0]);
-                    plugin.getConfig().set(base + ".y1", p1[1]);
-                    plugin.getConfig().set(base + ".z1", p1[2]);
+                    yaml.set(base + ".x1", p1[0]);
+                    yaml.set(base + ".y1", p1[1]);
+                    yaml.set(base + ".z1", p1[2]);
                 }
                 if (p2[0] != null) {
-                    plugin.getConfig().set(base + ".x2", p2[0]);
-                    plugin.getConfig().set(base + ".y2", p2[1]);
-                    plugin.getConfig().set(base + ".z2", p2[2]);
+                    yaml.set(base + ".x2", p2[0]);
+                    yaml.set(base + ".y2", p2[1]);
+                    yaml.set(base + ".z2", p2[2]);
                 }
             }
-            if (arena.getSpawn1() != null) {
-                plugin.getConfig().set(base + ".spawn1", LocationUtil.serialize(arena.getSpawn1()));
+            if (arena.hasSpawn1()) {
+                yaml.set(base + ".spawn1", arena.getSpawn1Raw());
             }
-            if (arena.getSpawn2() != null) {
-                plugin.getConfig().set(base + ".spawn2", LocationUtil.serialize(arena.getSpawn2()));
+            if (arena.hasSpawn2()) {
+                yaml.set(base + ".spawn2", arena.getSpawn2Raw());
             }
         }
-        plugin.saveConfig();
+        try {
+            plugin.getDataFolder().mkdirs();
+            yaml.save(file);
+        } catch (IOException ex) {
+            plugin.getLogger().severe("儲存 arenas.yml 失敗: " + ex.getMessage());
+        }
     }
 
     public Arena getArena(String name) {

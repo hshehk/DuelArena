@@ -5,6 +5,7 @@ import net.duelarena.util.MessageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.entity.EnderPearl;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -144,6 +145,9 @@ public class DuelManager {
         if (isArenaBusy(arena)) {
             return messages.get("duel.arena-taken");
         }
+        if (!arena.isFullyConfigured()) {
+            return messages.get("duel.arena-not-configured", "arena", arena.getName());
+        }
         if (isInDuel(from.getUniqueId()) || isInDuel(target.getUniqueId())) {
             return messages.get("duel.already-in-duel");
         }
@@ -162,6 +166,8 @@ public class DuelManager {
 
         resetForFight(p1);
         resetForFight(p2);
+        clearEnderPearls(p1);
+        clearEnderPearls(p2);
 
         p1.teleport(arena.getSpawn1());
         p2.teleport(arena.getSpawn2());
@@ -177,6 +183,18 @@ public class DuelManager {
         }
         for (PotionEffect effect : p.getActivePotionEffects()) {
             p.removePotionEffect(effect.getType());
+        }
+    }
+
+    /** 清除該玩家所有還在飛行中(尚未觸發傳送)的終界珍珠,不退還。 */
+    private void clearEnderPearls(Player p) {
+        UUID uuid = p.getUniqueId();
+        for (org.bukkit.World world : Bukkit.getWorlds()) {
+            for (EnderPearl pearl : world.getEntitiesByClass(EnderPearl.class)) {
+                if (pearl.getShooter() instanceof Player shooter && shooter.getUniqueId().equals(uuid)) {
+                    pearl.remove();
+                }
+            }
         }
     }
 

@@ -1,5 +1,6 @@
 package net.duelarena.arena;
 
+import net.duelarena.util.LocationUtil;
 import org.bukkit.Location;
 import org.bukkit.World;
 
@@ -16,8 +17,9 @@ public class Arena {
     private Integer x1, y1, z1;
     private Integer x2, y2, z2;
 
-    private Location spawn1;
-    private Location spawn2;
+    /** 出生點以原始字串保存(世界名,x,y,z,yaw,pitch),世界還沒載入時也不會遺失資料。 */
+    private String spawn1Raw;
+    private String spawn2Raw;
 
     public Arena(String name, ArenaType type) {
         this.name = name;
@@ -76,25 +78,52 @@ public class Arena {
         return new Integer[]{x2, y2, z2};
     }
 
+    /** 每次呼叫時才解析座標,所以世界晚一點才載入(例如 Multiverse)也能正常取得。世界未載入時回傳 null。 */
     public Location getSpawn1() {
-        return spawn1;
+        return LocationUtil.deserialize(spawn1Raw);
     }
 
     public void setSpawn1(Location spawn1) {
-        this.spawn1 = spawn1;
+        this.spawn1Raw = spawn1 == null ? null : LocationUtil.serialize(spawn1);
     }
 
     public Location getSpawn2() {
-        return spawn2;
+        return LocationUtil.deserialize(spawn2Raw);
     }
 
     public void setSpawn2(Location spawn2) {
-        this.spawn2 = spawn2;
+        this.spawn2Raw = spawn2 == null ? null : LocationUtil.serialize(spawn2);
     }
 
+    public String getSpawn1Raw() {
+        return spawn1Raw;
+    }
+
+    public void setSpawn1Raw(String raw) {
+        this.spawn1Raw = raw;
+    }
+
+    public String getSpawn2Raw() {
+        return spawn2Raw;
+    }
+
+    public void setSpawn2Raw(String raw) {
+        this.spawn2Raw = raw;
+    }
+
+    /** 是否「已設定」出生點(不管該世界目前有沒有載入)。 */
+    public boolean hasSpawn1() {
+        return spawn1Raw != null && !spawn1Raw.isEmpty();
+    }
+
+    public boolean hasSpawn2() {
+        return spawn2Raw != null && !spawn2Raw.isEmpty();
+    }
+
+    /** 是否目前可以使用:範圍與出生點都設定好,且出生點的世界已載入。 */
     public boolean isFullyConfigured() {
         return world != null && x1 != null && x2 != null
-                && spawn1 != null && spawn2 != null;
+                && getSpawn1() != null && getSpawn2() != null;
     }
 
     /** 是否位於此場地的框選範圍內(同世界 + 座標在 min/max 之間)。 */

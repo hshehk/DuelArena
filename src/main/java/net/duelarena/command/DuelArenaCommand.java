@@ -101,9 +101,9 @@ public class DuelArenaCommand implements CommandExecutor, TabCompleter {
                 messages.send(sender, "arena.info-pos1", "pos", java.util.Arrays.toString(a.getPos1()));
                 messages.send(sender, "arena.info-pos2", "pos", java.util.Arrays.toString(a.getPos2()));
                 messages.send(sender, "arena.info-spawn1", "status",
-                        a.getSpawn1() != null ? messages.get("arena.spawn-set") : messages.get("arena.spawn-not-set"));
+                        a.hasSpawn1() ? messages.get("arena.spawn-set") : messages.get("arena.spawn-not-set"));
                 messages.send(sender, "arena.info-spawn2", "status",
-                        a.getSpawn2() != null ? messages.get("arena.spawn-set") : messages.get("arena.spawn-not-set"));
+                        a.hasSpawn2() ? messages.get("arena.spawn-set") : messages.get("arena.spawn-not-set"));
             }
             case "setpos1", "setpos2", "setspawn1", "setspawn2" -> {
                 if (!(sender instanceof Player player)) {
