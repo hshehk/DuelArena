@@ -13,5 +13,25 @@ settings:
   blade-banned-blocks:
     - RESPAWN_ANCHOR
 
-# 場地資料,建議都用 /duelarena 指令設定,不要手動編輯
-arenas: {}
+  # 決鬥中(含贏家整理期間)禁止使用的指令黑名單。
+  # 不用加 /,不分大小寫;可以寫多個字的指令,例如 "tpa accept"。
+  # 別名(例如 tp 與 teleport)要分別列出;"minecraft:tp" 這類前綴寫法會自動視為 tp。
+  # 擁有 duelarena.admin.bypass 權限的人不受限制。
+  blocked-commands:
+    - tp
+    - teleport
+    - tphere
+    - tppos
+    - tpa
+    - tpahere
+    - tpaccept
+    - tpyes
+    - home
+    - homes
+    - spawn
+    - warp
+    - back
+    - rtp
+    - wild
+
+# 場地資料已改存在 arenas.yml,請用 /duelarena 指令設定,不要手動編輯。

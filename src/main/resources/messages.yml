@@ -94,3 +94,4 @@ duel:
 
   no-cleanup-pending: '你目前沒有需要離開的整理階段。'
   cleanup-finished: '&a整理時間結束,場地已清理完畢。'
+  command-blocked: '&c決鬥中不能使用這個指令。'
