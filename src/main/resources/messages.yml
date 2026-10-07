@@ -95,3 +95,7 @@ duel:
   no-cleanup-pending: '你目前沒有需要離開的整理階段。'
   cleanup-finished: '&a整理時間結束,場地已清理完畢。'
   command-blocked: '&c決鬥中不能使用這個指令。'
+  self-newbie: '&c你還在新手保護中,不能參加決鬥。'
+  target-newbie: '&c%target% 還在新手保護中,不能被邀請決鬥。'
+  inviter-newbie: '&c邀請你的 %target% 還在新手保護中,決鬥取消。'
+  returned-after-relog: '&e你在決鬥中離線,已將你傳回決鬥前的位置。'

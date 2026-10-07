@@ -3,7 +3,7 @@ version: '${project.version}'
 main: net.duelarena.DuelPlugin
 api-version: '26.2'
 author: tsukieru
-softdepend: [Multiverse-Core]
+softdepend: [Multiverse-Core, PvPManager]
 description: 1v1 決鬥競技場插件(爆炸場 / 打刀場)
 
 commands:

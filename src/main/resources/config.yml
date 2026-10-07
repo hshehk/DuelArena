@@ -34,4 +34,7 @@ settings:
     - rtp
     - wild
 
+  # 有安裝 PvPManager 時,還在新手保護中的玩家不能邀請/被邀請/接受決鬥。
+  block-newbie-protected: true
+
 # 場地資料已改存在 arenas.yml,請用 /duelarena 指令設定,不要手動編輯。

@@ -12,7 +12,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.Location;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 
 public class DuelPlayerListener implements Listener {
@@ -38,6 +41,20 @@ public class DuelPlayerListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onQuit(PlayerQuitEvent event) {
         duelManager.handleQuit(event.getPlayer());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onJoin(PlayerJoinEvent event) {
+        duelManager.handleJoin(event.getPlayer());
+    }
+
+    /** 決鬥輸家(或戰鬥中退出被判死亡的人)重生時,傳回決鬥前的位置。 */
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onRespawn(PlayerRespawnEvent event) {
+        Location loc = duelManager.consumePendingReturn(event.getPlayer().getUniqueId());
+        if (loc != null) {
+            event.setRespawnLocation(loc);
+        }
     }
 
     /**

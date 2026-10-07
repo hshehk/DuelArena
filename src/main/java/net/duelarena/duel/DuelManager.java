@@ -1,16 +1,22 @@
 package net.duelarena.duel;
 
 import net.duelarena.arena.Arena;
+import net.duelarena.util.LocationUtil;
 import net.duelarena.util.MessageManager;
+import net.duelarena.util.PvPManagerHook;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EnderPearl;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -27,9 +33,93 @@ public class DuelManager {
     /** 玩家 uuid -> 決鬥(雙方在 ACTIVE 階段都有,CLEANUP 階段只有贏家有) */
     private final Map<UUID, Duel> byPlayer = new HashMap<>();
 
+    private final PvPManagerHook pvpManager;
+
+    /** 離線/死亡後等待傳回原位置的玩家(uuid -> 序列化座標),會存檔,重開伺服器也不會遺失。 */
+    private final Map<UUID, String> pendingReturns = new HashMap<>();
+    private final File pendingFile;
+
     public DuelManager(JavaPlugin plugin, MessageManager messages) {
         this.plugin = plugin;
         this.messages = messages;
+        this.pvpManager = new PvPManagerHook(plugin);
+        this.pendingFile = new File(plugin.getDataFolder(), "pending-returns.yml");
+        loadPending();
+    }
+
+    // ---------------- 待傳回位置 ----------------
+
+    private void loadPending() {
+        if (!pendingFile.exists()) {
+            return;
+        }
+        ConfigurationSection sec = YamlConfiguration.loadConfiguration(pendingFile).getConfigurationSection("pending");
+        if (sec == null) {
+            return;
+        }
+        for (String key : sec.getKeys(false)) {
+            try {
+                String raw = sec.getString(key);
+                if (raw != null) {
+                    pendingReturns.put(UUID.fromString(key), raw);
+                }
+            } catch (IllegalArgumentException ignored) {
+                // 壞掉的紀錄直接略過
+            }
+        }
+    }
+
+    private void savePending() {
+        YamlConfiguration yaml = new YamlConfiguration();
+        for (Map.Entry<UUID, String> e : pendingReturns.entrySet()) {
+            yaml.set("pending." + e.getKey(), e.getValue());
+        }
+        try {
+            plugin.getDataFolder().mkdirs();
+            yaml.save(pendingFile);
+        } catch (IOException ex) {
+            plugin.getLogger().severe("儲存 pending-returns.yml 失敗: " + ex.getMessage());
+        }
+    }
+
+    private void addPendingReturn(UUID uuid, Location loc) {
+        if (loc == null || loc.getWorld() == null) {
+            return;
+        }
+        pendingReturns.put(uuid, LocationUtil.serialize(loc));
+        savePending();
+    }
+
+    /** 取出並移除待傳回位置;若該世界目前沒載入則保留紀錄並回傳 null。 */
+    public Location consumePendingReturn(UUID uuid) {
+        String raw = pendingReturns.get(uuid);
+        if (raw == null) {
+            return null;
+        }
+        Location loc = LocationUtil.deserialize(raw);
+        if (loc == null) {
+            return null;
+        }
+        pendingReturns.remove(uuid);
+        savePending();
+        return loc;
+    }
+
+    /** 玩家上線時:若有待傳回位置且人還活著,就傳回去;死亡狀態則等重生事件處理。 */
+    public void handleJoin(Player p) {
+        if (!pendingReturns.containsKey(p.getUniqueId())) {
+            return;
+        }
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (!p.isOnline() || p.isDead()) {
+                return;
+            }
+            Location loc = consumePendingReturn(p.getUniqueId());
+            if (loc != null) {
+                p.teleport(loc);
+                messages.send(p, "duel.returned-after-relog");
+            }
+        }, 5L);
     }
 
     private int cleanupSeconds() {
@@ -75,6 +165,12 @@ public class DuelManager {
         }
         if (isInDuel(target.getUniqueId())) {
             return messages.get("duel.target-in-duel", "target", target.getName());
+        }
+        if (pvpManager.isNewbie(from)) {
+            return messages.get("duel.self-newbie");
+        }
+        if (pvpManager.isNewbie(target)) {
+            return messages.get("duel.target-newbie", "target", target.getName());
         }
         if (invites.containsKey(target.getUniqueId())) {
             return messages.get("duel.target-has-pending-invite", "target", target.getName());
@@ -147,6 +243,12 @@ public class DuelManager {
         }
         if (!arena.isFullyConfigured()) {
             return messages.get("duel.arena-not-configured", "arena", arena.getName());
+        }
+        if (pvpManager.isNewbie(target)) {
+            return messages.get("duel.self-newbie");
+        }
+        if (pvpManager.isNewbie(from)) {
+            return messages.get("duel.inviter-newbie", "target", from.getName());
         }
         if (isInDuel(from.getUniqueId()) || isInDuel(target.getUniqueId())) {
             return messages.get("duel.already-in-duel");
@@ -248,9 +350,15 @@ public class DuelManager {
         }
         if (duel.getState() == DuelState.ACTIVE) {
             UUID winnerUuid = duel.getOpponent(uuid);
+            // 先記下要傳回的位置,下次上線(或重生)時傳回去
+            addPendingReturn(uuid, duel.getReturnLoc(uuid));
+            // 先結算(狀態變 CLEANUP),之後的死亡事件就不會重複判定
             endFight(duel, winnerUuid, uuid, true);
+            // 戰鬥中退出視同死亡
+            p.setHealth(0.0);
         } else if (uuid.equals(duel.getWinner())) {
-            // 贏家在整理階段離線,直接結束整理
+            // 贏家在整理階段離線,直接結束整理,下次上線傳回原位置
+            addPendingReturn(uuid, duel.getReturnLoc(uuid));
             finishCleanup(duel, true);
         }
     }
@@ -268,7 +376,12 @@ public class DuelManager {
         if (!loserOffline && loser != null) {
             Location back = duel.getReturnLoc(loserUuid);
             if (back != null) {
-                loser.teleport(back);
+                if (loser.isDead()) {
+                    // 已死亡:改成重生時傳回原位置
+                    addPendingReturn(loserUuid, back);
+                } else {
+                    loser.teleport(back);
+                }
             }
             messages.send(loser, "duel.lost");
         }
